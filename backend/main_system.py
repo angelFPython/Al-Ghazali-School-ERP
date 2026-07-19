@@ -1,47 +1,92 @@
 from flask import Flask, request, jsonify
 import os
-from werkzeug.utils import secure_filename
+import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads/'
-os.makedirs('uploads/students', exist_ok=True)
 
-# 1. نظام الصلاحيات والقوائم
+# إعداد قاعدة البيانات (يتم الإنشاء تلقائياً في أول تشغيل)
+DB_NAME = "database/school_data.db"
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# --- وحدة الطلاب ---
+@app.route('/api/students/add', methods=['POST'])
+def add_student():
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO students (full_name, seat_number, school_id, parent_whatsapp) VALUES (?, ?, ?, ?)",
+                   (data['name'], data['seat_number'], data['school_id'], data['parent_whatsapp']))
+    conn.commit()
+    return jsonify({"status": "success", "message": "تم إضافة الطالب بنجاح"})
+
+# --- وحدة المعلمين ---
+@app.route('/api/teachers/add', methods=['POST'])
+def add_teacher():
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO teachers (full_name, emp_number, phone, whatsapp, specialization) VALUES (?, ?, ?, ?, ?)",
+                   (data['name'], data['emp_number'], data['phone'], data['whatsapp'], data['specialization']))
+    conn.commit()
+    return jsonify({"status": "success", "message": "تم إضافة المعلم بنجاح"})
+
+# --- وحدة الإشعارات (واتساب / SMS / بريد) ---
+@app.route('/api/notifications/send', methods=['POST'])
+def send_notification():
+    data = request.json
+    # هذا المكان يتم فيه الربط مع بوابة واتساب API أو SMS Gateway
+    method = data.get('method') # 'whatsapp', 'sms', 'email'
+    recipient = data.get('recipient')
+    message = data.get('message')
+    
+    print(f"إرسال عبر {method} إلى {recipient}: {message}")
+    return jsonify({"status": "success", "message": "تم إرسال الإشعار بنجاح"})
+
+# --- وحدة النماذج الرسمية (الجمهورية اليمنية) ---
+@app.route('/api/docs/generate', methods=['POST'])
+def generate_official_doc():
+    data = request.json
+    # هنا يتم إنشاء الوثيقة بتنسيق الجمهورية اليمنية
+    doc_content = f"""
+    الجمهورية اليمنية
+    وزارة التربية والتعليم
+    مدرسة الغزالي
+    ---
+    الموضوع: {data['subject']}
+    إلى: {data['recipient']}
+    {data['body']}
+    ---
+    التوقيع والختم: [ختم المدرسة]
+    """
+    return jsonify({"status": "success", "doc_content": doc_content})
+
+# --- وحدة الذكاء الاصطناعي ---
+@app.route('/api/ai/analyze', methods=['POST'])
+def ai_analyze():
+    data = request.json
+    # تحليل بيانات الطالب وتوقع مستواه
+    # هذا الكود هو نقطة الانطلاق لمنطق الـ AI
+    analysis = "النتيجة: الطالب متفوق ويحتاج تشجيع، نسبة التسرب: 0%"
+    return jsonify({"status": "success", "analysis": analysis})
+
+# --- وحدة الصلاحيات (التحكم في القوائم) ---
 @app.route('/api/auth/menu', methods=['GET'])
-def get_user_menu():
-    role = request.args.get('role')
-    # القوائم تظهر حسب الصلاحية المسجلة
+def get_menu():
+    role = request.args.get('role', 'student')
     menus = {
-        "admin": ["إدارة الطلاب", "إدارة المعلمين", "المالية", "الوثائق الرسمية", "الإعدادات", "الذكاء الاصطناعي"],
-        "teacher": ["طلابي", "إرسال إشعار", "جدول الحصص"]
+        "admin": ["الكل", "إعدادات المدرسة", "المالية", "إدارة المعلمين"],
+        "teacher": ["طلابي", "الحضور", "الرسائل"],
+        "student": ["نتائجي", "جدولي"]
     }
     return jsonify({"menu": menus.get(role, [])})
 
-# 2. إدارة المعلمين مع نظام الإشعارات الفوري
-@app.route('/api/teachers/notify', methods=['POST'])
-def notify_teacher():
-    data = request.json
-    # الربط البرمجي لإرسال واتساب/PDF/نصي
-    print(f"إرسال إلى {data['teacher_id']} عبر {data['method']}: {data['message']}")
-    return jsonify({"status": "success", "message": "تم إرسال الإشعار"})
-
-# 3. إدارة الطلاب (إضافة + صور)
-@app.route('/api/students/add', methods=['POST'])
-def add_student():
-    # معالجة بيانات الطالب والصورة الشخصية
-    return jsonify({"status": "success", "message": "تم إضافة الطالب بنجاح"})
-
-# 4. إصدار الوثائق الرسمية (الجمهورية اليمنية)
-@app.route('/api/docs/official', methods=['POST'])
-def generate_official_doc():
-    # دمج البيانات مع الترويسة والنسر الجمهوري وتصدير PDF
-    return jsonify({"status": "success", "doc_url": "path/to/official_doc.pdf"})
-
-# 5. وحدة الذكاء الاصطناعي (توقع النتائج وتحليل الأداء)
-@app.route('/api/ai/predict', methods=['POST'])
-def ai_analysis():
-    # تحليل البيانات وتقديم حلول للمدير
-    return jsonify({"status": "success", "report": "الطالب يحتاج لدروس تقوية"})
-
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # التأكد من وجود مجلد قاعدة البيانات
+    if not os.path.exists('database'):
+        os.makedirs('database')
+    app.run(debug=True)
