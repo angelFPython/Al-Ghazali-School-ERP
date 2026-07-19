@@ -1,4 +1,4 @@
--- 1. جدول إعدادات المدرسة (اسم المدرسة، الشعار، المدير..)
+-- 1. جدول إعدادات المدرسة
 CREATE TABLE IF NOT EXISTS school_settings (
     id SERIAL PRIMARY KEY,
     school_name VARCHAR(255) DEFAULT 'مدرسة الغزالي',
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS school_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. جدول المستخدمين والصلاحيات (لضبط دخول المدير والكنترول والمعلمين)
+-- 2. جدول المستخدمين والصلاحيات
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL -- admin, control, teacher, accountant, student, parent
 );
 
--- 3. جدول المعلمين (البيانات الكاملة + المهام + الواتساب)
+-- 3. جدول المعلمين
 CREATE TABLE IF NOT EXISTS teachers (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS teachers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. جدول الطلاب (البيانات الكاملة + الصور + بيانات ولي الأمر)
+-- 4. جدول الطلاب
 CREATE TABLE IF NOT EXISTS students (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
@@ -53,17 +53,28 @@ CREATE TABLE IF NOT EXISTS students (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- إدراج المدير الافتراضي
-INSERT INTO school_settings (school_name, governorate) VALUES ('مدرسة الغزالي', 'اليمن');
-INSERT INTO users (username, password_hash, full_name, role) VALUES ('admin', 'admin_hash_here', 'مدير النظام', 'admin');
-
 -- 5. جدول العمليات المالية
 CREATE TABLE IF NOT EXISTS finance (
     id SERIAL PRIMARY KEY,
-    transaction_type VARCHAR(20), -- 'income' (إيراد) أو 'expense' (مصروف)
+    transaction_type VARCHAR(20), 
     amount DECIMAL(15, 2),
     description TEXT,
-    category VARCHAR(50), -- 'رسوم', 'رواتب', 'صيانة'
-    student_id VARCHAR(50), -- مرتبط بجدول الطلاب
+    category VARCHAR(50),
+    student_id VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 6. جدول الأرشيف الرسمي للوثائق
+CREATE TABLE IF NOT EXISTS official_docs (
+    id SERIAL PRIMARY KEY,
+    doc_type VARCHAR(100),
+    recipient_name VARCHAR(255),
+    issue_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    serial_number VARCHAR(50) UNIQUE,
+    content TEXT,
+    created_by VARCHAR(50)
+);
+
+-- البيانات الافتراضية
+INSERT INTO school_settings (school_name, governorate) VALUES ('مدرسة الغزالي', 'اليمن');
+INSERT INTO users (username, password_hash, full_name, role) VALUES ('admin', 'admin_hash_here', 'مدير النظام', 'admin');
