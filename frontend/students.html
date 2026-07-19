@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>إدارة الطلاب - مدرسة الغزالي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+    <h2>إدارة ملفات الطلاب</h2>
+    <form id="studentForm" class="row g-3 p-3 border rounded shadow-sm">
+        <div class="col-md-4">
+            <input type="text" id="name" class="form-control" placeholder="الاسم الرباعي" required>
+        </div>
+        <div class="col-md-2">
+            <input type="text" id="seatNumber" class="form-control" placeholder="رقم الجلوس" required>
+        </div>
+        <div class="col-md-3">
+            <input type="file" id="photo" class="form-control" accept="image/*">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">حفظ الطالب</button>
+        </div>
+    </form>
+    
+    <table class="table mt-4">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>رقم الجلوس</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody id="studentTable"></tbody>
+    </table>
+</body>
+</html>
+
