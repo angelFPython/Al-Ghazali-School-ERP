@@ -1,46 +1,62 @@
+import os
 from flask import Flask, request, jsonify
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-# محاكاة لقاعدة بيانات المعلمين
-teachers_db = {}
+# إعدادات المجلدات
+UPLOAD_FOLDER = 'uploads/students/'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# 1. إضافة معلم جديد
+# قاعدة بيانات مؤقتة (سيتم ربطها لاحقاً بـ PostgreSQL)
+users_db = {"admin": {"role": "admin"}, "teacher1": {"role": "teacher"}}
+teachers_db = {}
+students_db = {}
+
+# --- إدارة الإعدادات ---
+@app.route('/api/school-settings', methods=['GET'])
+def get_settings():
+    return jsonify({"school_name": "مدرسة الغزالي", "governorate": "اليمن"})
+
+# --- نظام القوائم والصلاحيات ---
+@app.route('/api/get-menu', methods=['GET'])
+def get_menu():
+    username = request.args.get('username')
+    user = users_db.get(username, {"role": "guest"})
+    roles_menu = {
+        "admin": ["إعدادات المدرسة", "إدارة المعلمين", "إدارة الطلاب", "المالية", "التقارير"],
+        "teacher": ["طلابي", "إرسال إشعار", "جدول الحصص"]
+    }
+    return jsonify({"menu": roles_menu.get(user['role'], [])})
+
+# --- إدارة المعلمين ---
 @app.route('/api/teachers/add', methods=['POST'])
 def add_teacher():
     data = request.json
-    emp_id = data.get('employee_number')
-    teachers_db[emp_id] = data
-    return jsonify({"status": "success", "message": f"تم إضافة المعلم {data.get('full_name')} بنجاح"})
+    teachers_db[data['employee_number']] = data
+    return jsonify({"status": "success", "message": "تم إضافة المعلم"})
 
-# 2. جلب جميع المعلمين
-@app.route('/api/teachers/list', methods=['GET'])
-def list_teachers():
-    return jsonify(list(teachers_db.values()))
-
-# 3. إرسال إشعار للمعلم (واتساب / إشعار نظام)
 @app.route('/api/teachers/send-notification', methods=['POST'])
 def send_notification():
     data = request.json
-    teacher_id = data.get('teacher_id')
-    message = data.get('message')
-    method = data.get('method') # 'whatsapp', 'sms', 'system'
-    
-    # هنا يتم الربط البرمجي الفعلي مع بوابة الواتساب
-    # مثال: if method == 'whatsapp': send_whatsapp_api(teacher_phone, message)
-    
-    print(f"إرسال عبر {method} إلى المعلم {teacher_id}: {message}")
-    
-    return jsonify({
-        "status": "success", 
-        "message": f"تم إرسال الإشعار بنجاح عبر {method}"
-    })
+    # ربط برمجية الـ WhatsApp API هنا
+    return jsonify({"status": "success", "message": "تم الإرسال عبر " + data.get('method')})
 
-# (تذكير: دمجنا هنا دالة get_menu من الكود السابق للحفاظ على تكامل النظام)
-@app.route('/api/get-menu', methods=['GET'])
-def get_menu():
-    # ... نفس كود الصلاحيات السابق ...
-    return jsonify({"menu": ["إدارة المعلمين", "إرسال إشعار"]})
+# --- إدارة الطلاب مع رفع الصور ---
+@app.route('/api/students/add', methods=['POST'])
+def add_student():
+    data = request.form
+    student_id = data.get('school_id')
+    photo_path = None
+    if 'photo' in request.files:
+        photo = request.files['photo']
+        filename = secure_filename(f"{student_id}_{photo.filename}")
+        photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        photo_path = os.path.join(UPLOAD_FOLDER, filename)
+    
+    students_db[student_id] = {**data, "photo_path": photo_path}
+    return jsonify({"status": "success", "message": "تم إضافة الطالب بنجاح"})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
