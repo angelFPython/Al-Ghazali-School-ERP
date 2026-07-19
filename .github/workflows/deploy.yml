@@ -1,21 +1,35 @@
-name: Build Project
-on: [push]
+name: Build and Package Project
+
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # 1. سحب الكود من المستودع
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
-      - name: Archive Project Files
+      # 2. إنشاء مجلد البناء وتجميع كافة الملفات (Backend + Database + Frontend)
+      - name: Prepare Files
         run: |
-          mkdir build
-          cp index.html build/
+          mkdir -p build
+          # نسخ ملفات النظام
           cp -r backend build/
           cp -r database build/
+          # إنشاء واجهة الويب إذا كانت غير موجودة
+          if [ ! -f index.html ]; then
+            echo "<html><body><h1>نظام مدرسة الغزالي الذكي</h1></body></html>" > build/index.html
+          else
+            cp index.html build/
+          fi
 
+      # 3. رفع الملفات كـ Artifact ليظهر رابط التحميل في صفحة الـ Actions
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: school-project-files
+          name: Al-Ghazali-School-Project
           path: build/
