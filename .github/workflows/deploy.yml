@@ -13,21 +13,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      # 2. إنشاء مجلد البناء وتجميع كافة الملفات (Backend + Database + Frontend)
+      # 2. إنشاء مجلد البناء وتجميع كافة الملفات المطلوبة
       - name: Prepare Files
         run: |
           mkdir -p build
-          # نسخ ملفات النظام
+          
+          # نسخ ملفات النظام البرمجية (Backend)
           cp -r backend build/
+          
+          # نسخ قاعدة البيانات (Database)
           cp -r database build/
-          # إنشاء واجهة الويب إذا كانت غير موجودة
-          if [ ! -f index.html ]; then
-            echo "<html><body><h1>نظام مدرسة الغزالي الذكي</h1></body></html>" > build/index.html
-          else
+          
+          # نسخ واجهة الويب (إذا كانت موجودة)
+          if [ -d "frontend" ]; then
+            cp -r frontend/* build/
+          elif [ -f "index.html" ]; then
             cp index.html build/
+          else
+            echo "<html><body><h1>نظام مدرسة الغزالي الذكي</h1></body></html>" > build/index.html
           fi
 
-      # 3. رفع الملفات كـ Artifact ليظهر رابط التحميل في صفحة الـ Actions
+      # 3. رفع الملفات كـ Artifact للتحميل
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
