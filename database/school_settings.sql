@@ -56,3 +56,14 @@ CREATE TABLE IF NOT EXISTS students (
 -- إدراج المدير الافتراضي
 INSERT INTO school_settings (school_name, governorate) VALUES ('مدرسة الغزالي', 'اليمن');
 INSERT INTO users (username, password_hash, full_name, role) VALUES ('admin', 'admin_hash_here', 'مدير النظام', 'admin');
+
+-- 5. جدول العمليات المالية
+CREATE TABLE IF NOT EXISTS finance (
+    id SERIAL PRIMARY KEY,
+    transaction_type VARCHAR(20), -- 'income' (إيراد) أو 'expense' (مصروف)
+    amount DECIMAL(15, 2),
+    description TEXT,
+    category VARCHAR(50), -- 'رسوم', 'رواتب', 'صيانة'
+    student_id VARCHAR(50), -- مرتبط بجدول الطلاب
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
